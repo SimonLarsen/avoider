@@ -1,6 +1,6 @@
 /*
 
- MAP.H
+ TITLE_TILES.H
 
  Map Include File.
 
@@ -8,7 +8,7 @@
    Section       : 
    Bank          : 0
    Map size      : 20 x 18
-   Tile set      : bg_tiles.gbr
+   Tile set      : Z:\home\simon\gb\avoider\bg_tiles.gbr
    Plane count   : 1 plane (8 bits)
    Plane order   : Tiles are continues
    Tile offset   : 0
@@ -18,10 +18,10 @@
 
 */
 
-#define mapWidth 20
-#define mapHeight 18
-#define mapBank 0
+#define title_tilesWidth 20
+#define title_tilesHeight 18
+#define title_tilesBank 0
 
-extern unsigned char map[];
+extern unsigned char title_tiles[];
 
-/* End of MAP.H */
+/* End of TITLE_TILES.H */

@@ -8,9 +8,9 @@
   Form                 : All tiles as one unit.
   Format               : Gameboy 4 color.
   Compression          : None.
-  Counter              : None.
+  Counter              : Tile-count as Constant.
   Tile size            : 8 x 8
-  Tiles                : 0 to 43
+  Tiles                : 0 to 115
 
   Palette colors       : None.
   SGB Palette          : None.
@@ -27,5 +27,6 @@
 #define bg_dataBank 0
 /* Start of tile array. */
 extern unsigned char bg_data[];
+#define bg_dataLen 116
 
 /* End of BG_DATA.H */

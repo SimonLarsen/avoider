@@ -8,7 +8,7 @@
   Form                 : All tiles as one unit.
   Format               : Gameboy 4 color.
   Compression          : None.
-  Counter              : None.
+  Counter              : Tile-count as Constant.
   Tile size            : 8 x 8
   Tiles                : 0 to 64
 

@@ -8,7 +8,7 @@
   Form                 : All tiles as one unit.
   Format               : Gameboy 4 color.
   Compression          : None.
-  Counter              : None.
+  Counter              : Tile-count as Constant.
   Tile size            : 8 x 8
   Tiles                : 0 to 64
 
@@ -27,5 +27,6 @@
 #define sprite_dataBank 0
 /* Start of tile array. */
 extern unsigned char sprite_data[];
+#define sprite_dataLen 65
 
 /* End of SPRITE_DATA.H */
