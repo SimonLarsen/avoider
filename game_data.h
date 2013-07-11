@@ -1,6 +1,6 @@
 /*
 
- SPRITE_DATA.H
+ GAME_DATA.H
 
  Include File.
 
@@ -10,7 +10,7 @@
   Compression          : None.
   Counter              : Tile-count as Constant.
   Tile size            : 8 x 8
-  Tiles                : 0 to 74
+  Tiles                : 0 to 51
 
   Palette colors       : None.
   SGB Palette          : None.
@@ -24,9 +24,9 @@
 
 
 /* Bank of tiles. */
-#define sprite_dataBank 0
+#define game_dataBank 0
 /* Start of tile array. */
-extern unsigned char sprite_data[];
-#define sprite_dataLen 75
+extern unsigned char game_data[];
+#define game_dataLen 52
 
-/* End of SPRITE_DATA.H */
+/* End of GAME_DATA.H */

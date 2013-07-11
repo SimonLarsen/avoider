@@ -1,6 +1,6 @@
 /*
 
- BG_DATA.H
+ TITLE_DATA.H
 
  Include File.
 
@@ -10,7 +10,7 @@
   Compression          : None.
   Counter              : Tile-count as Constant.
   Tile size            : 8 x 8
-  Tiles                : 0 to 115
+  Tiles                : 0 to 79
 
   Palette colors       : None.
   SGB Palette          : None.
@@ -24,9 +24,9 @@
 
 
 /* Bank of tiles. */
-#define bg_dataBank 0
+#define title_dataBank 0
 /* Start of tile array. */
-extern unsigned char bg_data[];
-#define bg_dataLen 116
+extern unsigned char title_data[];
+#define title_dataLen 80
 
-/* End of BG_DATA.H */
+/* End of TITLE_DATA.H */

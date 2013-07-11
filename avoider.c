@@ -1,7 +1,8 @@
 #include <gb/gb.h>
 #include <rand.h>
 #include "binconst.h"
-#include "bg_data.h"
+#include "title_data.h"
+#include "game_data.h"
 #include "sprite_data.h"
 #include "map_tiles.h"
 #include "title_tiles.h"
@@ -19,7 +20,8 @@
 #define DIR_DOWN  2
 #define DIR_LEFT  3 
 
-#define COLDIST 8 // Player-Box collision extent
+#define COLDISTX 8 // Player-Box collision extent
+#define COLDISTY 7 
 
 #define START_DELAY 70
 #define MIN_DELAY 20
@@ -65,10 +67,6 @@ void init() {
 	BGP_REG = OBP1_REG = B8(11100100);
 	OBP0_REG = B8(11100000);
 
-	// Load tile data sets
-	set_bkg_data(0, bg_dataLen, bg_data);
-	set_sprite_data(0, sprite_dataLen, sprite_data);
-
 	DISPLAY_ON;
 	enable_interrupts();
 }
@@ -78,6 +76,8 @@ void showTitle() {
 
 	// Load titlescreen and seed RNG
 	DISPLAY_OFF;
+	LCDC_REG = B8(01000001);
+	set_bkg_data(0, title_dataLen, title_data);
 	set_bkg_tiles(0, 0, 20, 18, title_tiles);
 	DISPLAY_ON;
 
@@ -97,6 +97,11 @@ void clearMap() {
 	for(i = 0; i < MAPW*MAPH; ++i) {
 		map[i] = 0;
 	}
+}
+
+void updateScore() {
+	set_sprite_tile(6, 65 + score / 10);
+	set_sprite_tile(7, 65 + score % 10);
 }
 
 /**
@@ -241,6 +246,42 @@ void gameLoop() {
 	BYTE xdist, ydist;
 	UBYTE cx, cy;
 
+	// Init player
+	pposx = 80;
+	pposy = 64;
+	pdir = DIR_DOWN;
+	alive = 1;
+
+	// Set game variables
+	score = 0;
+	nextHole = 0;
+	switch_delay = START_DELAY;
+
+	clearMap();
+
+	// Load game map BG tiles
+	DISPLAY_OFF;
+	// Load tile data sets
+	LCDC_REG = B8(01000011);
+	set_sprite_data(0, sprite_dataLen, sprite_data);
+	set_bkg_data(0, game_dataLen, game_data);
+	set_bkg_tiles(0, 0, 20, 18, map_tiles);
+
+	// Score counter
+	set_sprite_tile(5, 64);
+	move_sprite(5, 15, 148);
+
+	set_sprite_tile(6, 65);
+	set_sprite_tile(7, 65);
+	move_sprite(6, 26, 148);
+	move_sprite(7, 35, 148);
+
+	set_sprite_tile(4, 64);
+	addBox();
+
+	DISPLAY_ON;
+
+
 	// Game loop
 	while(alive) {
 		wait_vbl_done();
@@ -252,9 +293,10 @@ void gameLoop() {
 		// Check if player has picked up box
 		xdist = pposx - boxx;
 		ydist = pposy - boxy;
-		if(xdist > -COLDIST && xdist < COLDIST
-		&& ydist > -COLDIST && ydist < COLDIST) {
+		if(xdist > -COLDISTX && xdist < COLDISTX
+		&& ydist > -COLDISTY && ydist < COLDISTY) {
 			score++;
+			updateScore();
 			addBox();
 			switch_delay--;
 		}
@@ -273,27 +315,6 @@ void main() {
 
 	while(1) {
 		showTitle();
-
-		// Init player
-		pposx = 80;
-		pposy = 64;
-		pdir = DIR_DOWN;
-		alive = 1;
-
-		// Set game variables
-		score = 0;
-		nextHole = 0;
-		switch_delay = START_DELAY;
-
-		clearMap();
-
-		// Load game map BG tiles
-		DISPLAY_OFF;
-		set_bkg_tiles(0, 0, 20, 18, map_tiles);
-		DISPLAY_ON;
-
-		set_sprite_tile(4, 64);
-		addBox();
 
 		gameLoop();
 	}

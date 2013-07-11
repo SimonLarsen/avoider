@@ -1,16 +1,19 @@
 CC=lcc
 
-avoider.gb: avoider.o sprite_data.o bg_data.o map_tiles.o title_tiles.o
-	$(CC) avoider.o sprite_data.o bg_data.o map_tiles.o title_tiles.o -o avoider.gb
+avoider.gb: avoider.o sprite_data.o title_data.o game_data.o map_tiles.o title_tiles.o
+	$(CC) avoider.o sprite_data.o title_data.o game_data.o map_tiles.o title_tiles.o -o avoider.gb
 
-avoider.o: avoider.c map_tiles.h bg_data.h sprite_data.h
+avoider.o: avoider.c sprite_data.h title_data.h game_data.h map_tiles.h title_tiles.h
 	$(CC) -c avoider.c
 
 sprite_data.o: sprite_data.c
 	$(CC) -c sprite_data.c
 
-bg_data.o: bg_data.c
-	$(CC) -c bg_data.c
+title_data.o: title_data.c
+	$(CC) -c title_data.c
+
+game_data.o: game_data.c
+	$(CC) -c game_data.c
 
 map_tiles.o: map_tiles.c
 	$(CC) -c map_tiles.c
