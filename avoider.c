@@ -19,18 +19,24 @@
 #define DIR_DOWN  2
 #define DIR_LEFT  3 
 
-#define HOLE_DELAY 50
-#define WHITE_TIME 50
-#define BLACK_TIME 100
+#define COLDIST 8 // Player-Box collision extent
 
-UBYTE time;
+#define START_DELAY 70
+#define MIN_DELAY 20
+
+BYTE time;
+BYTE nextHole;
+BYTE score;
 
 UBYTE pposx, pposy;
 UBYTE pframe, pdir;
+BYTE switch_delay;
+UBYTE alive;
+
+UBYTE boxx, boxy;
+UBYTE boxcx, boxcy;
 
 UBYTE map[MAPW*MAPH];
-
-UBYTE nextHole;
 
 unsigned char normal_cell_tiles[] = { 32, 34, 33, 35 };
 unsigned char white_cell_tiles[] = { 36, 38, 37, 39 };
@@ -84,7 +90,7 @@ void showTitle() {
 }
 
 /**
- * Clears game map zeroing all cells.
+ * Clears game map by zeroing all cells.
  */
 void clearMap() {
 	UBYTE i = 0;
@@ -94,33 +100,82 @@ void clearMap() {
 }
 
 /**
+ * Moves the box to a random position.
+ */
+void addBox() {
+	boxcx = (UBYTE)rand() % MAPW;
+	boxcy = (UBYTE)rand() % MAPH;
+	boxx = boxcx * 16 + 24;
+	boxy = boxcy * 16 + 28;
+
+	move_sprite(4, boxx+4, boxy+8);
+}
+
+/**
  * Updates map and triggers events when appropriate.
  */
-void updateMap() {
-	UBYTE x, y;
+void spawnCells() {
+	BYTE x, y, ix, iy;
 
 	nextHole++;
 	// Add white cell
-	if(nextHole >= HOLE_DELAY) {
+	if(nextHole >= switch_delay) {
 		nextHole = 0;
-		x = (UBYTE)rand() % MAPW;
-		y = (UBYTE)rand() % MAPH;
-		map[x + y*MAPW] = 1;
-		set_bkg_tiles(2+x*2, 2+y*2, 2, 2, white_cell_tiles);
-	}
-
-	for(y = 0; y < MAPH; ++y) {
-		for(x = 0; x < MAPW; ++x) {
-			if(map[x + y*MAPW] > 0) {
-				map[x + y*MAPW]++;
-				if(map[x + y*MAPW] > BLACK_TIME) {
-					map[x + y*MAPW] = 0;
-					set_bkg_tiles(2+x*2, 2+y*2, 2, 2, normal_cell_tiles);
-				} else if(map[x + y*MAPW] > WHITE_TIME) {
-					set_bkg_tiles(2+x*2, 2+y*2, 2, 2, black_cell_tiles);
-				}
+		// Random event
+		x = (UBYTE)rand() % 2;
+		// Horizontal line
+		if(x == 0) {
+			y = (UBYTE)rand() % MAPH;
+			ix = 2;
+			iy = 2 + (y << 1);
+			for(x = 0; x < MAPW; ++x) {
+				map[x + (y << 3)] = 1; //map[x + y*MAPW] = 1;
+				set_bkg_tiles(ix, iy, 2, 2, white_cell_tiles);
+				ix += 2;
 			}
 		}
+		// Vertical line
+		else {
+			x = (UBYTE)rand() % MAPW;
+			ix = 2 + (x << 1);
+			iy = 2;
+			for(y = 0; y < MAPH; ++y) {
+				map[x + (y << 3)] = 1; //map[x + y*MAPW] = 1;
+				set_bkg_tiles(ix, iy, 2, 2, white_cell_tiles);
+				iy += 2;
+			}
+		}
+	}
+}
+
+/**
+ * Updates cell counters, creates black holes
+ * and removed expired black holes.
+ */
+void updateMap() {
+	UBYTE x, y, i, ix, iy, black_exp;
+
+	black_exp = switch_delay << 1;
+	// Check cell timers
+	iy = 2;
+	for(y = 0; y < MAPH; ++y) {
+		ix = 2;
+		for(x = 0; x < MAPW; ++x) {
+			i = x + (y<<3); // x + (y*MAPW)
+			if(map[i] > 0) {
+				map[i]++;
+				// Remove expired black holes
+				if(map[i] > black_exp) {
+					map[i] = 0;
+					set_bkg_tiles(ix, iy, 2, 2, normal_cell_tiles);
+				// Switch white cells
+				} else if(map[i] > switch_delay) {
+					set_bkg_tiles(ix, iy, 2, 2, black_cell_tiles);
+				}
+			}
+			ix += 2;
+		}
+		iy += 2;
 	}
 }
 
@@ -130,8 +185,8 @@ void updateMap() {
 void updatePlayer() {
 	UBYTE i, moved;
 
-	moved = 0;
 	// Get joypad input
+	moved = 0;
 	i = joypad();
 	if(i & J_RIGHT) {
 		pposx += 1;
@@ -176,34 +231,70 @@ void updatePlayer() {
 	}
 
 	i = (pdir << 4) + (pframe << 2);
-	set_sprite_tile(0, i);
-	set_sprite_tile(1, i+1);
-	set_sprite_tile(2, i+2);
-	set_sprite_tile(3, i+3);
+	set_sprite_tile(0, i++);
+	set_sprite_tile(1, i++);
+	set_sprite_tile(2, i++);
+	set_sprite_tile(3, i);
+}
+
+void gameLoop() {
+	BYTE xdist, ydist;
+	UBYTE cx, cy;
+
+	// Game loop
+	while(alive) {
+		wait_vbl_done();
+		time++;
+		spawnCells();
+		updateMap();
+		updatePlayer();
+
+		// Check if player has picked up box
+		xdist = pposx - boxx;
+		ydist = pposy - boxy;
+		if(xdist > -COLDIST && xdist < COLDIST
+		&& ydist > -COLDIST && ydist < COLDIST) {
+			score++;
+			addBox();
+			switch_delay--;
+		}
+
+		// Check if player is on black hole
+		cx = pposx/16 - 1;
+		cy = pposy/16 - 1;
+		if(map[cx + cy*MAPW] > switch_delay) {
+			alive = 0;
+		}
+	}
 }
 
 void main() {
 	init();
 
-	showTitle();
-
-	// Init player
-	pposx = 80;
-	pposy = 64;
-	pdir = DIR_DOWN;
-
-	nextHole = 0;
-
-	// Load game map BG tiles
-	DISPLAY_OFF;
-	set_bkg_tiles(0, 0, 20, 18, map_tiles);
-	DISPLAY_ON;
-
-	// Game loop
 	while(1) {
-		wait_vbl_done();
-		time++;
-		updateMap();
-		updatePlayer();
+		showTitle();
+
+		// Init player
+		pposx = 80;
+		pposy = 64;
+		pdir = DIR_DOWN;
+		alive = 1;
+
+		// Set game variables
+		score = 0;
+		nextHole = 0;
+		switch_delay = START_DELAY;
+
+		clearMap();
+
+		// Load game map BG tiles
+		DISPLAY_OFF;
+		set_bkg_tiles(0, 0, 20, 18, map_tiles);
+		DISPLAY_ON;
+
+		set_sprite_tile(4, 64);
+		addBox();
+
+		gameLoop();
 	}
 }
