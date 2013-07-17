@@ -23,11 +23,15 @@
 #define COLDISTX 8 // Player-Box collision extent
 #define COLDISTY 7 
 
+#define CELL_NORMAL 0
+#define CELL_WHITE  1
+#define CELL_BLACK  2
+
 #define START_DELAY 70
 #define MIN_DELAY 20
 
 BYTE time;
-BYTE nextHole;
+BYTE nextUpdate;
 BYTE score;
 
 UBYTE pposx, pposy;
@@ -121,34 +125,29 @@ void addBox() {
  */
 void spawnCells() {
 	BYTE x, y, ix, iy;
-
-	nextHole++;
 	// Add white cell
-	if(nextHole >= switch_delay) {
-		nextHole = 0;
-		// Random event
-		x = (UBYTE)rand() % 2;
-		// Horizontal line
-		if(x == 0) {
-			y = (UBYTE)rand() % MAPH;
-			ix = 2;
-			iy = 2 + (y << 1);
-			for(x = 0; x < MAPW; ++x) {
-				map[x + (y << 3)] = 1; //map[x + y*MAPW] = 1;
-				set_bkg_tiles(ix, iy, 2, 2, white_cell_tiles);
-				ix += 2;
-			}
+	// Random event
+	x = (UBYTE)rand() % 2;
+	// Horizontal line
+	if(x == 0) {
+		y = (UBYTE)rand() % MAPH;
+		ix = 2;
+		iy = 2 + (y << 1);
+		for(x = 0; x < MAPW; ++x) {
+			map[x + (y << 3)] = CELL_WHITE; //map[x + y*MAPW] = 1;
+			set_bkg_tiles(ix, iy, 2, 2, white_cell_tiles);
+			ix += 2;
 		}
-		// Vertical line
-		else {
-			x = (UBYTE)rand() % MAPW;
-			ix = 2 + (x << 1);
-			iy = 2;
-			for(y = 0; y < MAPH; ++y) {
-				map[x + (y << 3)] = 1; //map[x + y*MAPW] = 1;
-				set_bkg_tiles(ix, iy, 2, 2, white_cell_tiles);
-				iy += 2;
-			}
+	}
+	// Vertical line
+	else {
+		x = (UBYTE)rand() % MAPW;
+		ix = 2 + (x << 1);
+		iy = 2;
+		for(y = 0; y < MAPH; ++y) {
+			map[x + (y << 3)] = CELL_WHITE; //map[x + y*MAPW] = 1;
+			set_bkg_tiles(ix, iy, 2, 2, white_cell_tiles);
+			iy += 2;
 		}
 	}
 }
@@ -167,16 +166,14 @@ void updateMap() {
 		ix = 2;
 		for(x = 0; x < MAPW; ++x) {
 			i = x + (y<<3); // x + (y*MAPW)
-			if(map[i] > 0) {
-				map[i]++;
-				// Remove expired black holes
-				if(map[i] > black_exp) {
-					map[i] = 0;
-					set_bkg_tiles(ix, iy, 2, 2, normal_cell_tiles);
-				// Switch white cells
-				} else if(map[i] > switch_delay) {
-					set_bkg_tiles(ix, iy, 2, 2, black_cell_tiles);
-				}
+			// Switch white cells
+			if(map[i] == CELL_WHITE) {
+				map[i] = CELL_BLACK;
+				set_bkg_tiles(ix, iy, 2, 2, black_cell_tiles);
+			}
+			else if(map[i] == CELL_BLACK) {
+				map[i] = CELL_NORMAL;
+				set_bkg_tiles(ix, iy, 2, 2, normal_cell_tiles);
 			}
 			ix += 2;
 		}
@@ -254,7 +251,7 @@ void gameLoop() {
 
 	// Set game variables
 	score = 0;
-	nextHole = 0;
+	nextUpdate = 0;
 	switch_delay = START_DELAY;
 
 	clearMap();
@@ -286,8 +283,12 @@ void gameLoop() {
 	while(alive) {
 		wait_vbl_done();
 		time++;
-		spawnCells();
-		updateMap();
+		nextUpdate++;
+		if(nextUpdate >= switch_delay) {
+			nextUpdate = 0;
+			updateMap();
+			spawnCells();
+		}
 		updatePlayer();
 
 		// Check if player has picked up box
@@ -304,7 +305,7 @@ void gameLoop() {
 		// Check if player is on black hole
 		cx = pposx/16 - 1;
 		cy = pposy/16 - 1;
-		if(map[cx + cy*MAPW] > switch_delay) {
+		if(map[cx + cy*MAPW] == CELL_BLACK) {
 			alive = 0;
 		}
 	}
