@@ -7,46 +7,7 @@
 #include "map_tiles.h"
 #include "title_tiles.h"
 
-#define MAPW 8
-#define MAPH 6
-
-#define PMINY 18
-#define PMAXY 111
-#define PMINX 20
-#define PMAXX 140
-
-#define DIR_UP 	  0
-#define DIR_RIGHT 1
-#define DIR_DOWN  2
-#define DIR_LEFT  3 
-
-#define COLDISTX 8 // Player-Box collision extent
-#define COLDISTY 7 
-
-#define CELL_NORMAL 0
-#define CELL_WHITE  1
-#define CELL_BLACK  2
-
-#define START_DELAY 70
-#define MIN_DELAY 20
-
-BYTE time;
-BYTE nextUpdate;
-BYTE score;
-
-UBYTE pposx, pposy;
-UBYTE pframe, pdir;
-BYTE switch_delay;
-UBYTE alive;
-
-UBYTE boxx, boxy;
-UBYTE boxcx, boxcy;
-
-UBYTE map[MAPW*MAPH];
-
-unsigned char normal_cell_tiles[] = { 32, 34, 33, 35 };
-unsigned char white_cell_tiles[] = { 36, 38, 37, 39 };
-unsigned char black_cell_tiles[] = { 40, 42, 41, 43 };
+#include "avoider.h"
 
 /**
  * Initializes game.
@@ -75,6 +36,10 @@ void init() {
 	enable_interrupts();
 }
 
+/**
+ * Draws the title screen
+ * and halts until START is pushed.
+ */
 void showTitle() {
 	UWORD seed;
 
@@ -103,6 +68,10 @@ void clearMap() {
 	}
 }
 
+/**
+ * Updates the score counter sprites
+ * in the HUD
+ */
 void updateScore() {
 	set_sprite_tile(6, 65 + score / 10);
 	set_sprite_tile(7, 65 + score % 10);
@@ -121,7 +90,7 @@ void addBox() {
 }
 
 /**
- * Updates map and triggers events when appropriate.
+ * Adds a row or column of white cells.
  */
 void spawnCells() {
 	BYTE x, y, ix, iy;
@@ -153,8 +122,8 @@ void spawnCells() {
 }
 
 /**
- * Updates cell counters, creates black holes
- * and removed expired black holes.
+ * Updates all white cells to be black and removes
+ * black cells.
  */
 void updateMap() {
 	UBYTE x, y, i, ix, iy, black_exp;
@@ -239,6 +208,9 @@ void updatePlayer() {
 	set_sprite_tile(3, i);
 }
 
+/**
+ * Main ingame loop.
+ */
 void gameLoop() {
 	BYTE xdist, ydist;
 	UBYTE cx, cy;
@@ -253,8 +225,6 @@ void gameLoop() {
 	score = 0;
 	nextUpdate = 0;
 	switch_delay = START_DELAY;
-
-	clearMap();
 
 	// Load game map BG tiles
 	DISPLAY_OFF;
@@ -274,6 +244,8 @@ void gameLoop() {
 	move_sprite(7, 35, 148);
 
 	set_sprite_tile(4, 64);
+
+	clearMap();
 	addBox();
 
 	DISPLAY_ON;
@@ -305,7 +277,7 @@ void gameLoop() {
 		// Check if player is on black hole
 		cx = pposx/16 - 1;
 		cy = pposy/16 - 1;
-		if(map[cx + cy*MAPW] == CELL_BLACK) {
+		if(map[cx + cy*MAPW] >= CELL_BLACK) {
 			alive = 0;
 		}
 	}
@@ -316,7 +288,6 @@ void main() {
 
 	while(1) {
 		showTitle();
-
 		gameLoop();
 	}
 }
