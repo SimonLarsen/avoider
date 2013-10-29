@@ -1,7 +1,7 @@
 CC=lcc
 
 avoider.gb: avoider.o sprite_data.o title_data.o game_data.o map_tiles.o title_tiles.o
-	$(CC) avoider.o sprite_data.o title_data.o game_data.o map_tiles.o title_tiles.o -o avoider.gb
+	$(CC) avoider.o sprite_data.o title_data.o game_data.o map_tiles.o title_tiles.o -o avoider.gb #-Wl-yp0x0143=0x80
 
 avoider.o: avoider.c sprite_data.h title_data.h game_data.h map_tiles.h title_tiles.h
 	$(CC) -c avoider.c
